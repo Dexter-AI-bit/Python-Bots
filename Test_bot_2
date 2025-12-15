@@ -244,3 +244,55 @@ async def unban(ctx, member: discord.Member, *, reason=None):
 async def unban_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("You do not have permission to unban members.")
+
+
+
+# general error handling for commands
+@bot.event()
+async def on_command_error(ctx, error):
+    # this block is for general command errors
+
+# Check for missing required arguments (e.g., !kick, !play)
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f" **Missing Argument:** Please provide all required arguments. Check `!help {ctx.command}`.")
+
+    elif isinstance(error, commands.BadArgument): # Check for errors when converting an argument (e.g., member not found)
+        return await ctx.send(" **Invalid Input:** I couldn"t find that user or understand the argument you provided.")
+    
+    # Check for the Bot having missing permissions
+    elif isinstance(error, commands.BotMissingPermissions):
+       perms = ", ".join(error.missing_permissions) # error.missing_permissions is a list of missing permissions
+       return await ctx.send(f" **Bot Missing Permissions:** I need the following permissions to execute this command: {perms}")
+
+
+ # If it"s not one of the handled errors, log it or raise it for debugging
+    print(f"Ignoring exception in command {ctx.command}:", file=sys.stderr)
+    raise error   
+        
+
+
+#embed command
+@bot.command()
+async def embed(ctx):
+    embed = discord.Embed(title="Sample Embed", url="", description="This is an example of an embedded message.", color=0x008000)
+    embed.set_author(name="MyBot", url="", icon_url="https://i.imgur.com/rdm3W9t.png")
+    embed.set_thumbnail(url="https://i.imgur.com/rdm3W9t.png")
+    embed.add_field(name="Field 1", value="This is the value for field 1.", inline=False)
+    embed.add_field(name="Field 2", value="This is the value for field 2.", inline=True)
+    embed.add_field(name="Field 3", value="This is the value for field 3.", inline=True)
+    embed.set_footer(text="This is the footer text.", icon_url="https://i.imgur.com/rdm3W9t.png")
+    await ctx.send(embed=embed)
+
+        
+# direct message command
+@bot.command()
+async def message(ctx, user:discord.Member, *, message=None):
+    message = "Welcome to the server!" #if message is None else message
+    embed = discord.Embed(title=message)
+    await user.send(embed=embed)
+
+
+
+
+
+bot.run(TOKEN) 
