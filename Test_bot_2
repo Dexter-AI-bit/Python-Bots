@@ -1,0 +1,57 @@
+load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+queues = {}
+
+def check_queue(ctx, id):
+    if queues[id] != []:
+        voice = ctx.guild.voice_client
+        source = queues[id].pop(0)
+        player = voice.play(source)
+
+bot = commands.Bot(command_prefix= "!", intents=intents)
+
+# event comands 
+# / slash comands
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    await bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name="your commands!" ))
+    print(f"{bot.user} is online!")
+
+# slash command /greet
+@bot.tree.command(name="greet", description="Sends a greeting to the user")
+async def greet(interaction: discord.Interaction):
+    username = interaction.user.mention
+    await interaction.response.send_message(f"Hello there, {username}")
+
+
+# New Slash Command for Kick
+# The "app_commands.describe" decorator provides the hover-text in Discord
+@bot.tree.command(name="kick", description="Kicks a member from the server.")
+@app_commands.checks.has_permissions(kick_members=True)
+async def kick_slash(interaction: discord.Interaction, member: discord.Member, reason: str | None = None):
+    # This check happens *before* the function runs
+    
+    try:
+        await member.kick(reason=reason)
+        await interaction.response.send_message(f"User **{member.display_name}** has been kicked. Reason: {reason or "None"}", ephemeral=True)
+        # ephemeral=True makes the message only visible to the user who ran the command
+        
+    except discord.Forbidden:
+        await interaction.response.send_message(" I do not have permission to kick this member.", ephemeral=True)
+    except Exception as e:
+        print(f"Kick error: {e}")
+        await interaction.response.send_message("An unexpected error occurred during the kick operation.", ephemeral=True)
+
+# Error handling for slash commands is done using a different structure:
+@kick_slash.error
+async def kick_slash_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.MissingPermissions):
+        await interaction.response.send_message("You do not have permission to kick members.", ephemeral=True)
+    else:
+        # Pass up other errors
+        raise error
