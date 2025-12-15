@@ -185,3 +185,62 @@ async def on_message(message):
     await bot.process_commands(message)  #!!! This allows prefix commands (!kick, !play) to still be processed by discord.py!!!
 
 
+
+
+# kick command with permission check
+@bot.command()
+@has_permissions(kick_members=True)
+async def kick(ctx, member: discord.Member, *, reason=None):
+    await member.kick(reason=reason)
+    await ctx.send(f"User {member} has been kicked.")
+
+@kick.error
+async def kick_error(ctx, error):
+    if isinstance(error, MissingPermissions):
+        await ctx.send("You do not have permission to kick members.")
+
+
+
+
+# ban command with permission check
+@bot.command()
+@has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member, *, reason=None):
+    await member.ban(reason=reason)
+    await ctx.send(f"User {member} has been baned.")
+
+@ban.error
+async def ban_error(ctx, error):
+    if isinstance(error, MissingPermissions):
+        await ctx.send("You do not have permission to ban members.")
+        
+
+# error handling for unban command
+@ban.error
+async def unban_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You do not have permission to ban members.")
+
+# refined unban command with reason and permission check
+@bot.command()
+@has_permissions(ban_members=True)
+async def unban(ctx, member: discord.Member, *, reason=None):
+    banned_users = await ctx.guild.bans()
+    member_name, member_discriminator = member.split("#")
+
+
+    for ban_entry in banned_users:
+        print(ban_entry)
+        user = ban_entry.user
+
+        if (user.name, user.discriminator) == (member_name, member_discriminator):
+            await ctx.guild.unban(user, reason=reason)
+            await ctx.send(f"User {user} has been unbanned.")
+            return
+
+
+# error handling for unban command 
+@unban.error
+async def unban_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You do not have permission to unban members.")
