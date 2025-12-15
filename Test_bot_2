@@ -55,3 +55,39 @@ async def kick_slash_error(interaction: discord.Interaction, error: app_commands
     else:
         # Pass up other errors
         raise error
+
+
+
+# !join command
+@bot.command() # pass_context=True is redundant in modern discord.py (v2.0+) as the Context object (ctx) is passed by default. You can safely remove it
+async def join(ctx):
+    if (ctx.author.voice):
+        channel = ctx.message.author.voice.channel
+        voice = await channel.connect()
+        source = FFmpegPCMAudio("#path_to_your_audio_file#.mp3")  # Replace with your audio file path
+        voice.play(source)
+    else:
+        await ctx.send("You are not connected to a voice channel. You must be in a voice channel to run this command.")
+        
+# !leave command
+@bot.command() # pass_context=True is redundant in modern discord.py (v2.0+) as the Context object (ctx) is passed by default. You can safely remove it
+async def leave(ctx):
+    if (ctx.voice_client):
+        await ctx.guild.voice_client.disconnect()
+        await ctx.send("I left the voice channel.")
+    else:
+        await ctx.send("I am not connected to a voice channel.") 
+
+# playback commands
+@bot.command()
+async def pause(ctx):
+    voice = ctx.voice_client
+
+    if voice and voice.is_playing():
+        voice.pause()
+        await ctx.send("Paused the playback.")
+    elif not voice:
+        await ctx.send("Not connected to a voice channel.")
+    else:
+        await ctx.send("No audio is playing anything at the moment.")
+
