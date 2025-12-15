@@ -147,3 +147,41 @@ async def play(ctx, arg):
     else:
         voice.play(source, after=get_check_queue_callback(ctx, guild_id))
         await ctx.send(f"Now playing: {arg}")
+
+
+
+
+@bot.command()
+async def queue(ctx, arg):
+    voice = ctx.guild.voice_client
+    source = FFmpegPCMAudio(arg)
+    guild_id = ctx.guild.id
+
+    if guild_id not in queues:
+        queues[guild_id] = []
+
+    queues[guild_id].append(source)
+    await ctx.send(f"Added to queue: {arg}")  
+
+
+
+# profanity filter
+@bot.event
+async def on_message(message):
+    if message.author == bot.user: # Prevent the bot from responding to its own messages
+        return
+
+    forbiden_words = ["38 W B", "badword2", "badword3" ]  # Replace with actual forbidden words
+    content = message.content.lower().strip()
+
+    if any(bad_word.lower() in content for bad_word in forbiden_words):
+        try:
+            await message.delete()
+            await message.channel.send(f"{message.author.mention}, your message was removed due to inappropriate language.", delete_after=5)
+            return
+        except discord.Forbidden:
+            print(f"Could not delete messages from {message.author} in {message.cheannel}. Missing permissions.")
+
+    await bot.process_commands(message)  #!!! This allows prefix commands (!kick, !play) to still be processed by discord.py!!!
+
+
